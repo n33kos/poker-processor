@@ -7,7 +7,6 @@
  
 module.exports = {
 	
-	fs: require('fs'),
 	value_table : {"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"T":10,"J":11,"Q":12,"K":13,"A":14},
 
 	make_gameobject: function (str) {
@@ -26,35 +25,37 @@ module.exports = {
 	},
 
 	rank_hand: function (hand) {
-		var ranks = [-1];
-		var highs = [this.highest_card(hand)];
+		var mod = this,
+		ranks = [-1],
+		highs = [this.highest_card(hand)],
+		face = hand.match(/[2-9TJQKA]/g).sort(),
+		face_repeats = face.join("").match(/(.)\1+/g),
+		suit = hand.match(/[CDHS]/g).sort().join("").match(/(.)\1+/g);
 
 		//---------Duplicates-------
-		var face = hand.match(/[2-9TJQKA]/g).sort();
-		var face_match = face.join("").match(/(.)\1+/g);
-		if (face_match && face_match.length == 1) {
-			if (face_match[0].length == 2) {
+		if (face_repeats && face_repeats.length == 1) {
+			if (face_repeats[0].length == 2) {
 				ranks.push(0); // 0 - Pair
-			}else if (face_match[0].length == 3) {
+			}else if (face_repeats[0].length == 3) {
 				ranks.push(2); // 2 - Three of a kind
-			}else if (face_match[0].length == 4) {
+			}else if (face_repeats[0].length == 4) {
 				ranks.push(6); // 6 - Four of a kind
 			}
-			highs.push(this.highest_card(face_match[0]));
+			highs.push(this.highest_card(face_repeats[0]));
 		}
-		if (face_match && face_match.length == 2) {
-			if (face_match[0].length == 2 && face_match[1].length == 2) {
+		if (face_repeats && face_repeats.length == 2) {
+			if (face_repeats[0].length == 2 && face_repeats[1].length == 2) {
 				ranks.push(1); // 1 - Two Pair
-				var h1 = this.highest_card(face_match[0]), h2 = this.highest_card(face_match[1]);
+				var h1 = this.highest_card(face_repeats[0]), h2 = this.highest_card(face_repeats[1]);
 				highs.push(h1 > h2 ? h1 : h2);
-			}else if (face_match[0].length + face_match[1].length == 5) {
+			}
+			if (face_repeats[0].length + face_repeats[1].length == 5) {
 				ranks.push(5); // 5 - Full House
 				highs.push(this.highest_card(hand));
 			}
 		}
 
 		//---------Consecutives--------
-		var mod = this;
 		for (var i = 0; i < face.length; i++) {
 			face[i] = face[i].replace(/[TJQKA]/g, function(s){return mod.value_table[s];});
 		}
@@ -70,8 +71,6 @@ module.exports = {
 		}
 
 		//--------Suits--------
-		var suit = hand.match(/[CDHS]/g).sort().join("");
-		var suit = suit.match(/(.)\1+/g);
 		if (suit && suit.length == 1 && suit[0].length == 5) {
 			if(isStraight){
 				ranks.push(7); // 7 - Straight Flush
@@ -119,7 +118,7 @@ module.exports = {
 							}
 						}
 						if (i == 0 && j == 0)
-						return "Tie.";
+							return "Tie.";
 					}
 				}
 			}
